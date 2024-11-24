@@ -81,6 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
         throw UnimplementedError('No widget for $selectedIndex');
     }
 
+    // The container for the current page, with its background color
+    // and subtle switching animation.
     var mainArea = ColoredBox(
       color: colorScheme.surfaceContainerHighest,
       child: AnimatedSwitcher(
@@ -208,8 +210,8 @@ class BigCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.displayMedium!.copyWith(
+    var theme = Theme.of(context);
+    var style = theme.textTheme.displayMedium!.copyWith(
       color: theme.colorScheme.onPrimary,
     );
 
@@ -219,8 +221,8 @@ class BigCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: AnimatedSize(
           duration: Duration(milliseconds: 200),
-          // Make sure that the compound word wraps correctly
-          // when the window is too narrow.
+          // Make sure that the compound word wraps correctly when the window
+          // is too narrow.
           child: MergeSemantics(
             child: Wrap(
               children: [
@@ -249,7 +251,7 @@ class FavoritesPage extends StatelessWidget {
 
     if (appState.favorites.isEmpty) {
       return Center(
-        child: Text('No favorites yes.'),
+        child: Text('No favorites yet.'),
       );
     }
 
@@ -258,7 +260,8 @@ class FavoritesPage extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(30),
-          child: Text('You have ${appState.favorites.length} favorites:'),
+          child: Text('You have '
+              '${appState.favorites.length} favorites:'),
         ),
         Expanded(
           // Make better use of wide windows with a grid.
