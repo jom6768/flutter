@@ -1,14 +1,13 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/models/tax_history.dart';
-import '../../domain/services/tax_calculator.dart';
-import '../providers/tax_provider.dart';
-import 'tax_result_screen.dart';
-import 'tax_history_screen.dart';
+import 'package:tax_calculation/features/tax/domain/models/tax_history.dart';
+import 'package:tax_calculation/features/tax/presentation/providers/tax_calculate_provider.dart';
+import 'package:tax_calculation/features/tax/presentation/screens/tax_result_screen.dart';
+import 'package:tax_calculation/features/tax/presentation/screens/tax_history_screen.dart';
+import 'package:tax_calculation/features/tax/presentation/validators/form_validators.dart';
+import 'package:tax_calculation/features/tax/presentation/widgets/formatted_number_field.dart';
+import 'package:tax_calculation/features/tax/presentation/utils/number_format_utils.dart';
 
 class TaxFormScreen extends ConsumerStatefulWidget {
   const TaxFormScreen({super.key});
@@ -19,72 +18,86 @@ class TaxFormScreen extends ConsumerStatefulWidget {
 
 class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _annualIncomeController = TextEditingController(text: '0');
-  final _providentFundController = TextEditingController(text: '0');
-  final _socialSecurityController = TextEditingController(text: '0');
 
-  bool _isSaving = false;
+  // Controllers
+  final _annualIncomeController =
+      TextEditingController(text: formatForDisplay(0));
+  final _providentFundController =
+      TextEditingController(text: formatForDisplay(0));
+  final _socialSecurityController =
+      TextEditingController(text: formatForDisplay(0));
+
+  // FocusNodes สำหรับ Next
+  final _annualFocus = FocusNode();
+  final _providentFocus = FocusNode();
+  final _socialFocus = FocusNode();
 
   @override
   void dispose() {
     _annualIncomeController.dispose();
     _providentFundController.dispose();
     _socialSecurityController.dispose();
+
+    _annualFocus.dispose();
+    _providentFocus.dispose();
+    _socialFocus.dispose();
+
     super.dispose();
   }
 
   Future<void> _calculate() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final annualIncome = double.tryParse(_annualIncomeController.text) ?? 0;
-    final personalExpense = min(annualIncome * 0.5, 100000).toDouble();
-    const personalDeduction = 60000;
-    final providentFund = double.tryParse(_providentFundController.text) ?? 0;
-    final socialSecurity = double.tryParse(_socialSecurityController.text) ?? 0;
-
-    setState(() => _isSaving = true);
-
-    final tax = TaxCalculator.calculate(
-      annualIncome: annualIncome,
-      personalExpense: personalExpense,
-      personalDeduction: personalDeduction.toDouble(),
-      providentFund: providentFund,
-      socialSecurity: socialSecurity,
+    final input = TaxInput(
+      annualIncome: parseNumber(_annualIncomeController.text),
+      providentFund: parseNumber(_providentFundController.text),
+      socialSecurity: parseNumber(_socialSecurityController.text),
     );
+
+    final result = await ref.read(taxCalculateProvider(input).future);
 
     final history = TaxHistory(
-      annualIncome: annualIncome,
-      personalExpense: personalExpense,
-      personalDeduction: personalDeduction.toDouble(),
-      providentFund: providentFund,
-      socialSecurity: socialSecurity,
-      tax: tax,
+      annualIncome: input.annualIncome,
+      personalExpense: (input.annualIncome * 0.5).clamp(0, 100000),
+      personalDeduction: 60000,
+      providentFund: input.providentFund,
+      socialSecurity: input.socialSecurity,
+      tax: result.tax,
     );
 
-    // Save to DB
-    await ref.read(taxRepositoryProvider).save(history);
-
     if (!mounted) return;
-    setState(() => _isSaving = false);
 
-    // Navigate to Result Screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TaxResultScreen(history: history),
+        builder: (_) => TaxResultScreen(
+          history: history,
+          result: result,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref
+        .watch(
+          taxCalculateProvider(
+            const TaxInput(
+              annualIncome: 0,
+              providentFund: 0,
+              socialSecurity: 0,
+            ),
+          ),
+        )
+        .isLoading;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('คำนวณภาษีเงินได้'),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: 'ดูประวัติ',
             onPressed: () {
               Navigator.push(
                 context,
@@ -103,36 +116,38 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
           autovalidateMode: AutovalidateMode.always,
           child: Column(
             children: [
-              _buildNumberField(
+              FormattedNumberField(
+                label: 'เงินได้ทั้งปี (บาท)',
                 controller: _annualIncomeController,
-                label: 'รายได้ต่อปี (บาท)',
-                validator: (value) => numberValidator(value, required: true),
+                validator: (v) => numberValidator(v, required: true),
+                textInputAction: TextInputAction.next,
+                nextFocusNode: _providentFocus,
               ),
               const SizedBox(height: 12),
-              _buildNumberField(
-                controller: _providentFundController,
+              FormattedNumberField(
                 label: 'กองทุนสำรองเลี้ยงชีพ (บาท)',
-                validator: (value) => numberValidator(value),
+                controller: _providentFundController,
+                validator: numberValidator,
+                textInputAction: TextInputAction.next,
+                nextFocusNode: _socialFocus,
               ),
               const SizedBox(height: 12),
-              _buildNumberField(
-                controller: _socialSecurityController,
+              FormattedNumberField(
                 label: 'ค่าประกันสังคม (บาท)',
-                validator: (value) => numberValidator(value),
+                controller: _socialSecurityController,
+                validator: numberValidator,
+                textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isSaving ? null : _calculate,
-                  child: _isSaving
+                  onPressed: isLoading ? null : _calculate,
+                  child: isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('คำนวณภาษี'),
                 ),
@@ -143,89 +158,4 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
       ),
     );
   }
-
-  Widget _buildNumberField({
-    required TextEditingController controller,
-    required String label,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller..text = '0',
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-      ],
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      onChanged: (value) {
-        // Replace empty string with '0'
-        if (value.isEmpty) {
-          controller.text = '0';
-          controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: controller.text.length),
-          );
-          // Force only 1 period and max 2 decimal places
-        } else if ('.'.allMatches(value).isNotEmpty) {
-          int firstDotIndex = value.indexOf('.');
-          if (firstDotIndex >= 0) {
-            String beforeDot = value.substring(0, firstDotIndex + 1);
-            if (beforeDot.startsWith('0') &&
-                beforeDot != '0' &&
-                !beforeDot.startsWith('0.')) {
-              beforeDot = beforeDot.substring(1, beforeDot.length);
-            }
-            String afterDot = value
-                .substring(firstDotIndex + 1)
-                .replaceAll('.', ''); // Remove all extra dots
-            if (afterDot.length > 2) {
-              afterDot = afterDot.substring(0, 2);
-            }
-            final newValue = beforeDot + afterDot;
-            controller.text = newValue;
-            controller.selection = TextSelection.fromPosition(
-              TextPosition(offset: newValue.length),
-            );
-          }
-        } else if (value.startsWith('0') &&
-            value != '0' &&
-            !value.startsWith('0.')) {
-          final newValue = value.substring(1, value.length);
-          controller.text = newValue;
-          controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: newValue.length),
-          );
-        }
-      },
-      validator: validator,
-    );
-  }
-}
-
-String? numberValidator(String? value, {bool required = false}) {
-  if (required && (value == null || value.isEmpty)) {
-    return "กรุณากรอกข้อมูล";
-  }
-  if (value != null && value.isNotEmpty) {
-    if (double.tryParse(value) == null) {
-      return "กรุณากรอกเป็นตัวเลข";
-    } else if (required && (double.tryParse(value) ?? 0) <= 0) {
-      return "กรุณากรอกเป็นตัวเลขมากกว่า 0";
-    }
-  }
-  return null;
-}
-
-String? emailValidator(String? value) {
-  // Regex for email
-  final emailRegex = RegExp(
-    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-  );
-  if (value == null || value.isEmpty) {
-    return 'กรุณากรอกอีเมล';
-  } else if (!emailRegex.hasMatch(value)) {
-    return 'รูปแบบอีเมลไม่ถูกต้อง';
-  }
-  return null;
 }

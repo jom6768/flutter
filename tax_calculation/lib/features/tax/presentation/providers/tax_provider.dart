@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/database/tax_database.dart';
-import '../../data/tax_repository_impl.dart';
-import '../../data/tax_repository.dart';
+import 'package:tax_calculation/core/database/tax_database.dart';
+import 'package:tax_calculation/features/tax/data/tax_repository_impl.dart';
+import 'package:tax_calculation/features/tax/data/tax_repository.dart';
 
 final taxDatabaseProvider = Provider<TaxDatabase>((ref) {
   final db = TaxDatabase();

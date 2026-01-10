@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 
-import '../../../../core/database/tax_database.dart';
-import '../domain/models/tax_history.dart';
-import 'tax_repository.dart';
+import 'package:tax_calculation/core/database/tax_database.dart';
+import 'package:tax_calculation/features/tax/data/tax_repository.dart';
+import 'package:tax_calculation/features/tax/domain/models/tax_history.dart';
 
 class TaxRepositoryImpl implements TaxRepository {
   final TaxDatabase db;
