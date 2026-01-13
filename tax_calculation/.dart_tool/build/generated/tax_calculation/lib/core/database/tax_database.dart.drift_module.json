@@ -7,7 +7,7 @@
       },
       "declaration": {
         "source_uri": "package:tax_calculation/core/database/tax_database.dart",
-        "offset": 678,
+        "offset": 858,
         "name": "TaxDatabase"
       },
       "references": [
@@ -178,11 +178,95 @@
             "builtin": "double"
           },
           "nullable": false,
+          "nameInSql": "life_insurance",
+          "nameInDart": "lifeInsurance",
+          "declaration": {
+            "source_uri": "package:tax_calculation/core/database/tax_database.dart",
+            "offset": 535,
+            "name": "lifeInsurance"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "health_insurance",
+          "nameInDart": "healthInsurance",
+          "declaration": {
+            "source_uri": "package:tax_calculation/core/database/tax_database.dart",
+            "offset": 579,
+            "name": "healthInsurance"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "double_donation",
+          "nameInDart": "doubleDonation",
+          "declaration": {
+            "source_uri": "package:tax_calculation/core/database/tax_database.dart",
+            "offset": 625,
+            "name": "doubleDonation"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "normal_donation",
+          "nameInDart": "normalDonation",
+          "declaration": {
+            "source_uri": "package:tax_calculation/core/database/tax_database.dart",
+            "offset": 670,
+            "name": "normalDonation"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
           "nameInSql": "tax",
           "nameInDart": "tax",
           "declaration": {
             "source_uri": "package:tax_calculation/core/database/tax_database.dart",
-            "offset": 535,
+            "offset": 715,
             "name": "tax"
           },
           "typeConverter": null,
@@ -203,7 +287,7 @@
           "nameInDart": "createdAt",
           "declaration": {
             "source_uri": "package:tax_calculation/core/database/tax_database.dart",
-            "offset": 573,
+            "offset": 753,
             "name": "createdAt"
           },
           "typeConverter": null,

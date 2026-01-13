@@ -9,11 +9,19 @@ class TaxInput {
   final double annualIncome;
   final double providentFund;
   final double socialSecurity;
+  final double lifeInsurance;
+  final double healthInsurance;
+  final double doubleDonation;
+  final double normalDonation;
 
   const TaxInput({
     required this.annualIncome,
     required this.providentFund,
     required this.socialSecurity,
+    required this.lifeInsurance,
+    required this.healthInsurance,
+    required this.doubleDonation,
+    required this.normalDonation,
   });
 }
 
@@ -28,6 +36,10 @@ final taxCalculateProvider =
     personalDeduction: personalDeduction,
     providentFund: input.providentFund,
     socialSecurity: input.socialSecurity,
+    lifeInsurance: input.lifeInsurance,
+    healthInsurance: input.healthInsurance,
+    doubleDonation: input.doubleDonation,
+    normalDonation: input.normalDonation,
   );
 
   final history = TaxHistory(
@@ -36,6 +48,10 @@ final taxCalculateProvider =
     personalDeduction: personalDeduction,
     providentFund: input.providentFund,
     socialSecurity: input.socialSecurity,
+    lifeInsurance: input.lifeInsurance,
+    healthInsurance: input.healthInsurance,
+    doubleDonation: input.doubleDonation,
+    normalDonation: input.normalDonation,
     tax: result.tax,
   );
 

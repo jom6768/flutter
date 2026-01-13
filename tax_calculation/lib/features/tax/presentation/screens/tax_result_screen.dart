@@ -277,6 +277,10 @@ class TaxResultScreen extends StatelessWidget {
         _row('ค่าลดหย่อนส่วนตัว', history.personalDeduction),
         _row('กองทุนสำรองเลี้ยงชีพ', history.providentFund),
         _row('ค่าประกันสังคม', history.socialSecurity),
+        _row('เบี้ยประกันชีวิต', history.lifeInsurance),
+        _row('เบี้ยประกันสุขภาพ', history.healthInsurance),
+        _row('บริจาคเพื่อการศึกษา/กีฬา/โรงพยาบาลรัฐ', history.doubleDonation),
+        _row('บริจาคอื่นๆ', history.normalDonation),
       ],
     );
   }

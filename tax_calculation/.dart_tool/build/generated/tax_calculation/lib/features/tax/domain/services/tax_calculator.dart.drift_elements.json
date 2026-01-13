@@ -1,1 +1,1 @@
-{"valid_import":true,"imports":[],"elements":[]}
+{"valid_import":true,"imports":[{"uri":"package:tax_calculation/features/tax/domain/models/tax_breakdown.dart","transitive":false},{"uri":"package:tax_calculation/features/tax/domain/services/tax_bracket.dart","transitive":false}],"elements":[]}

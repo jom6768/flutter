@@ -44,6 +44,30 @@ class $TaxRecordsTable extends TaxRecords
   late final GeneratedColumn<double> socialSecurity = GeneratedColumn<double>(
       'social_security', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _lifeInsuranceMeta =
+      const VerificationMeta('lifeInsurance');
+  @override
+  late final GeneratedColumn<double> lifeInsurance = GeneratedColumn<double>(
+      'life_insurance', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _healthInsuranceMeta =
+      const VerificationMeta('healthInsurance');
+  @override
+  late final GeneratedColumn<double> healthInsurance = GeneratedColumn<double>(
+      'health_insurance', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _doubleDonationMeta =
+      const VerificationMeta('doubleDonation');
+  @override
+  late final GeneratedColumn<double> doubleDonation = GeneratedColumn<double>(
+      'double_donation', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _normalDonationMeta =
+      const VerificationMeta('normalDonation');
+  @override
+  late final GeneratedColumn<double> normalDonation = GeneratedColumn<double>(
+      'normal_donation', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
   static const VerificationMeta _taxMeta = const VerificationMeta('tax');
   @override
   late final GeneratedColumn<double> tax = GeneratedColumn<double>(
@@ -65,6 +89,10 @@ class $TaxRecordsTable extends TaxRecords
         personalDeduction,
         providentFund,
         socialSecurity,
+        lifeInsurance,
+        healthInsurance,
+        doubleDonation,
+        normalDonation,
         tax,
         createdAt
       ];
@@ -121,6 +149,38 @@ class $TaxRecordsTable extends TaxRecords
     } else if (isInserting) {
       context.missing(_socialSecurityMeta);
     }
+    if (data.containsKey('life_insurance')) {
+      context.handle(
+          _lifeInsuranceMeta,
+          lifeInsurance.isAcceptableOrUnknown(
+              data['life_insurance']!, _lifeInsuranceMeta));
+    } else if (isInserting) {
+      context.missing(_lifeInsuranceMeta);
+    }
+    if (data.containsKey('health_insurance')) {
+      context.handle(
+          _healthInsuranceMeta,
+          healthInsurance.isAcceptableOrUnknown(
+              data['health_insurance']!, _healthInsuranceMeta));
+    } else if (isInserting) {
+      context.missing(_healthInsuranceMeta);
+    }
+    if (data.containsKey('double_donation')) {
+      context.handle(
+          _doubleDonationMeta,
+          doubleDonation.isAcceptableOrUnknown(
+              data['double_donation']!, _doubleDonationMeta));
+    } else if (isInserting) {
+      context.missing(_doubleDonationMeta);
+    }
+    if (data.containsKey('normal_donation')) {
+      context.handle(
+          _normalDonationMeta,
+          normalDonation.isAcceptableOrUnknown(
+              data['normal_donation']!, _normalDonationMeta));
+    } else if (isInserting) {
+      context.missing(_normalDonationMeta);
+    }
     if (data.containsKey('tax')) {
       context.handle(
           _taxMeta, tax.isAcceptableOrUnknown(data['tax']!, _taxMeta));
@@ -152,6 +212,14 @@ class $TaxRecordsTable extends TaxRecords
           .read(DriftSqlType.double, data['${effectivePrefix}provident_fund'])!,
       socialSecurity: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}social_security'])!,
+      lifeInsurance: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}life_insurance'])!,
+      healthInsurance: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}health_insurance'])!,
+      doubleDonation: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}double_donation'])!,
+      normalDonation: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}normal_donation'])!,
       tax: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}tax'])!,
       createdAt: attachedDatabase.typeMapping
@@ -172,6 +240,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
   final double personalDeduction;
   final double providentFund;
   final double socialSecurity;
+  final double lifeInsurance;
+  final double healthInsurance;
+  final double doubleDonation;
+  final double normalDonation;
   final double tax;
   final DateTime createdAt;
   const TaxRecord(
@@ -181,6 +253,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
       required this.personalDeduction,
       required this.providentFund,
       required this.socialSecurity,
+      required this.lifeInsurance,
+      required this.healthInsurance,
+      required this.doubleDonation,
+      required this.normalDonation,
       required this.tax,
       required this.createdAt});
   @override
@@ -192,6 +268,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
     map['personal_deduction'] = Variable<double>(personalDeduction);
     map['provident_fund'] = Variable<double>(providentFund);
     map['social_security'] = Variable<double>(socialSecurity);
+    map['life_insurance'] = Variable<double>(lifeInsurance);
+    map['health_insurance'] = Variable<double>(healthInsurance);
+    map['double_donation'] = Variable<double>(doubleDonation);
+    map['normal_donation'] = Variable<double>(normalDonation);
     map['tax'] = Variable<double>(tax);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -205,6 +285,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
       personalDeduction: Value(personalDeduction),
       providentFund: Value(providentFund),
       socialSecurity: Value(socialSecurity),
+      lifeInsurance: Value(lifeInsurance),
+      healthInsurance: Value(healthInsurance),
+      doubleDonation: Value(doubleDonation),
+      normalDonation: Value(normalDonation),
       tax: Value(tax),
       createdAt: Value(createdAt),
     );
@@ -220,6 +304,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
       personalDeduction: serializer.fromJson<double>(json['personalDeduction']),
       providentFund: serializer.fromJson<double>(json['providentFund']),
       socialSecurity: serializer.fromJson<double>(json['socialSecurity']),
+      lifeInsurance: serializer.fromJson<double>(json['lifeInsurance']),
+      healthInsurance: serializer.fromJson<double>(json['healthInsurance']),
+      doubleDonation: serializer.fromJson<double>(json['doubleDonation']),
+      normalDonation: serializer.fromJson<double>(json['normalDonation']),
       tax: serializer.fromJson<double>(json['tax']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -234,6 +322,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
       'personalDeduction': serializer.toJson<double>(personalDeduction),
       'providentFund': serializer.toJson<double>(providentFund),
       'socialSecurity': serializer.toJson<double>(socialSecurity),
+      'lifeInsurance': serializer.toJson<double>(lifeInsurance),
+      'healthInsurance': serializer.toJson<double>(healthInsurance),
+      'doubleDonation': serializer.toJson<double>(doubleDonation),
+      'normalDonation': serializer.toJson<double>(normalDonation),
       'tax': serializer.toJson<double>(tax),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -246,6 +338,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
           double? personalDeduction,
           double? providentFund,
           double? socialSecurity,
+          double? lifeInsurance,
+          double? healthInsurance,
+          double? doubleDonation,
+          double? normalDonation,
           double? tax,
           DateTime? createdAt}) =>
       TaxRecord(
@@ -255,6 +351,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
         personalDeduction: personalDeduction ?? this.personalDeduction,
         providentFund: providentFund ?? this.providentFund,
         socialSecurity: socialSecurity ?? this.socialSecurity,
+        lifeInsurance: lifeInsurance ?? this.lifeInsurance,
+        healthInsurance: healthInsurance ?? this.healthInsurance,
+        doubleDonation: doubleDonation ?? this.doubleDonation,
+        normalDonation: normalDonation ?? this.normalDonation,
         tax: tax ?? this.tax,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -276,6 +376,18 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
       socialSecurity: data.socialSecurity.present
           ? data.socialSecurity.value
           : this.socialSecurity,
+      lifeInsurance: data.lifeInsurance.present
+          ? data.lifeInsurance.value
+          : this.lifeInsurance,
+      healthInsurance: data.healthInsurance.present
+          ? data.healthInsurance.value
+          : this.healthInsurance,
+      doubleDonation: data.doubleDonation.present
+          ? data.doubleDonation.value
+          : this.doubleDonation,
+      normalDonation: data.normalDonation.present
+          ? data.normalDonation.value
+          : this.normalDonation,
       tax: data.tax.present ? data.tax.value : this.tax,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -290,6 +402,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
           ..write('personalDeduction: $personalDeduction, ')
           ..write('providentFund: $providentFund, ')
           ..write('socialSecurity: $socialSecurity, ')
+          ..write('lifeInsurance: $lifeInsurance, ')
+          ..write('healthInsurance: $healthInsurance, ')
+          ..write('doubleDonation: $doubleDonation, ')
+          ..write('normalDonation: $normalDonation, ')
           ..write('tax: $tax, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -297,8 +413,19 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
   }
 
   @override
-  int get hashCode => Object.hash(id, annualIncome, personalExpense,
-      personalDeduction, providentFund, socialSecurity, tax, createdAt);
+  int get hashCode => Object.hash(
+      id,
+      annualIncome,
+      personalExpense,
+      personalDeduction,
+      providentFund,
+      socialSecurity,
+      lifeInsurance,
+      healthInsurance,
+      doubleDonation,
+      normalDonation,
+      tax,
+      createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -309,6 +436,10 @@ class TaxRecord extends DataClass implements Insertable<TaxRecord> {
           other.personalDeduction == this.personalDeduction &&
           other.providentFund == this.providentFund &&
           other.socialSecurity == this.socialSecurity &&
+          other.lifeInsurance == this.lifeInsurance &&
+          other.healthInsurance == this.healthInsurance &&
+          other.doubleDonation == this.doubleDonation &&
+          other.normalDonation == this.normalDonation &&
           other.tax == this.tax &&
           other.createdAt == this.createdAt);
 }
@@ -320,6 +451,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
   final Value<double> personalDeduction;
   final Value<double> providentFund;
   final Value<double> socialSecurity;
+  final Value<double> lifeInsurance;
+  final Value<double> healthInsurance;
+  final Value<double> doubleDonation;
+  final Value<double> normalDonation;
   final Value<double> tax;
   final Value<DateTime> createdAt;
   const TaxRecordsCompanion({
@@ -329,6 +464,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
     this.personalDeduction = const Value.absent(),
     this.providentFund = const Value.absent(),
     this.socialSecurity = const Value.absent(),
+    this.lifeInsurance = const Value.absent(),
+    this.healthInsurance = const Value.absent(),
+    this.doubleDonation = const Value.absent(),
+    this.normalDonation = const Value.absent(),
     this.tax = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -339,6 +478,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
     required double personalDeduction,
     required double providentFund,
     required double socialSecurity,
+    required double lifeInsurance,
+    required double healthInsurance,
+    required double doubleDonation,
+    required double normalDonation,
     required double tax,
     this.createdAt = const Value.absent(),
   })  : annualIncome = Value(annualIncome),
@@ -346,6 +489,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
         personalDeduction = Value(personalDeduction),
         providentFund = Value(providentFund),
         socialSecurity = Value(socialSecurity),
+        lifeInsurance = Value(lifeInsurance),
+        healthInsurance = Value(healthInsurance),
+        doubleDonation = Value(doubleDonation),
+        normalDonation = Value(normalDonation),
         tax = Value(tax);
   static Insertable<TaxRecord> custom({
     Expression<int>? id,
@@ -354,6 +501,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
     Expression<double>? personalDeduction,
     Expression<double>? providentFund,
     Expression<double>? socialSecurity,
+    Expression<double>? lifeInsurance,
+    Expression<double>? healthInsurance,
+    Expression<double>? doubleDonation,
+    Expression<double>? normalDonation,
     Expression<double>? tax,
     Expression<DateTime>? createdAt,
   }) {
@@ -364,6 +515,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
       if (personalDeduction != null) 'personal_deduction': personalDeduction,
       if (providentFund != null) 'provident_fund': providentFund,
       if (socialSecurity != null) 'social_security': socialSecurity,
+      if (lifeInsurance != null) 'life_insurance': lifeInsurance,
+      if (healthInsurance != null) 'health_insurance': healthInsurance,
+      if (doubleDonation != null) 'double_donation': doubleDonation,
+      if (normalDonation != null) 'normal_donation': normalDonation,
       if (tax != null) 'tax': tax,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -376,6 +531,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
       Value<double>? personalDeduction,
       Value<double>? providentFund,
       Value<double>? socialSecurity,
+      Value<double>? lifeInsurance,
+      Value<double>? healthInsurance,
+      Value<double>? doubleDonation,
+      Value<double>? normalDonation,
       Value<double>? tax,
       Value<DateTime>? createdAt}) {
     return TaxRecordsCompanion(
@@ -385,6 +544,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
       personalDeduction: personalDeduction ?? this.personalDeduction,
       providentFund: providentFund ?? this.providentFund,
       socialSecurity: socialSecurity ?? this.socialSecurity,
+      lifeInsurance: lifeInsurance ?? this.lifeInsurance,
+      healthInsurance: healthInsurance ?? this.healthInsurance,
+      doubleDonation: doubleDonation ?? this.doubleDonation,
+      normalDonation: normalDonation ?? this.normalDonation,
       tax: tax ?? this.tax,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -411,6 +574,18 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
     if (socialSecurity.present) {
       map['social_security'] = Variable<double>(socialSecurity.value);
     }
+    if (lifeInsurance.present) {
+      map['life_insurance'] = Variable<double>(lifeInsurance.value);
+    }
+    if (healthInsurance.present) {
+      map['health_insurance'] = Variable<double>(healthInsurance.value);
+    }
+    if (doubleDonation.present) {
+      map['double_donation'] = Variable<double>(doubleDonation.value);
+    }
+    if (normalDonation.present) {
+      map['normal_donation'] = Variable<double>(normalDonation.value);
+    }
     if (tax.present) {
       map['tax'] = Variable<double>(tax.value);
     }
@@ -429,6 +604,10 @@ class TaxRecordsCompanion extends UpdateCompanion<TaxRecord> {
           ..write('personalDeduction: $personalDeduction, ')
           ..write('providentFund: $providentFund, ')
           ..write('socialSecurity: $socialSecurity, ')
+          ..write('lifeInsurance: $lifeInsurance, ')
+          ..write('healthInsurance: $healthInsurance, ')
+          ..write('doubleDonation: $doubleDonation, ')
+          ..write('normalDonation: $normalDonation, ')
           ..write('tax: $tax, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -454,6 +633,10 @@ typedef $$TaxRecordsTableCreateCompanionBuilder = TaxRecordsCompanion Function({
   required double personalDeduction,
   required double providentFund,
   required double socialSecurity,
+  required double lifeInsurance,
+  required double healthInsurance,
+  required double doubleDonation,
+  required double normalDonation,
   required double tax,
   Value<DateTime> createdAt,
 });
@@ -464,6 +647,10 @@ typedef $$TaxRecordsTableUpdateCompanionBuilder = TaxRecordsCompanion Function({
   Value<double> personalDeduction,
   Value<double> providentFund,
   Value<double> socialSecurity,
+  Value<double> lifeInsurance,
+  Value<double> healthInsurance,
+  Value<double> doubleDonation,
+  Value<double> normalDonation,
   Value<double> tax,
   Value<DateTime> createdAt,
 });
@@ -496,6 +683,21 @@ class $$TaxRecordsTableFilterComposer
 
   ColumnFilters<double> get socialSecurity => $composableBuilder(
       column: $table.socialSecurity,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get lifeInsurance => $composableBuilder(
+      column: $table.lifeInsurance, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get healthInsurance => $composableBuilder(
+      column: $table.healthInsurance,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get doubleDonation => $composableBuilder(
+      column: $table.doubleDonation,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get normalDonation => $composableBuilder(
+      column: $table.normalDonation,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get tax => $composableBuilder(
@@ -537,6 +739,22 @@ class $$TaxRecordsTableOrderingComposer
       column: $table.socialSecurity,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get lifeInsurance => $composableBuilder(
+      column: $table.lifeInsurance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get healthInsurance => $composableBuilder(
+      column: $table.healthInsurance,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get doubleDonation => $composableBuilder(
+      column: $table.doubleDonation,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get normalDonation => $composableBuilder(
+      column: $table.normalDonation,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<double> get tax => $composableBuilder(
       column: $table.tax, builder: (column) => ColumnOrderings(column));
 
@@ -570,6 +788,18 @@ class $$TaxRecordsTableAnnotationComposer
 
   GeneratedColumn<double> get socialSecurity => $composableBuilder(
       column: $table.socialSecurity, builder: (column) => column);
+
+  GeneratedColumn<double> get lifeInsurance => $composableBuilder(
+      column: $table.lifeInsurance, builder: (column) => column);
+
+  GeneratedColumn<double> get healthInsurance => $composableBuilder(
+      column: $table.healthInsurance, builder: (column) => column);
+
+  GeneratedColumn<double> get doubleDonation => $composableBuilder(
+      column: $table.doubleDonation, builder: (column) => column);
+
+  GeneratedColumn<double> get normalDonation => $composableBuilder(
+      column: $table.normalDonation, builder: (column) => column);
 
   GeneratedColumn<double> get tax =>
       $composableBuilder(column: $table.tax, builder: (column) => column);
@@ -607,6 +837,10 @@ class $$TaxRecordsTableTableManager extends RootTableManager<
             Value<double> personalDeduction = const Value.absent(),
             Value<double> providentFund = const Value.absent(),
             Value<double> socialSecurity = const Value.absent(),
+            Value<double> lifeInsurance = const Value.absent(),
+            Value<double> healthInsurance = const Value.absent(),
+            Value<double> doubleDonation = const Value.absent(),
+            Value<double> normalDonation = const Value.absent(),
             Value<double> tax = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -617,6 +851,10 @@ class $$TaxRecordsTableTableManager extends RootTableManager<
             personalDeduction: personalDeduction,
             providentFund: providentFund,
             socialSecurity: socialSecurity,
+            lifeInsurance: lifeInsurance,
+            healthInsurance: healthInsurance,
+            doubleDonation: doubleDonation,
+            normalDonation: normalDonation,
             tax: tax,
             createdAt: createdAt,
           ),
@@ -627,6 +865,10 @@ class $$TaxRecordsTableTableManager extends RootTableManager<
             required double personalDeduction,
             required double providentFund,
             required double socialSecurity,
+            required double lifeInsurance,
+            required double healthInsurance,
+            required double doubleDonation,
+            required double normalDonation,
             required double tax,
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -637,6 +879,10 @@ class $$TaxRecordsTableTableManager extends RootTableManager<
             personalDeduction: personalDeduction,
             providentFund: providentFund,
             socialSecurity: socialSecurity,
+            lifeInsurance: lifeInsurance,
+            healthInsurance: healthInsurance,
+            doubleDonation: doubleDonation,
+            normalDonation: normalDonation,
             tax: tax,
             createdAt: createdAt,
           ),

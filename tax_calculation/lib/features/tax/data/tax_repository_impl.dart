@@ -17,6 +17,10 @@ class TaxRepositoryImpl implements TaxRepository {
       personalDeduction: Value(history.personalDeduction),
       providentFund: Value(history.providentFund),
       socialSecurity: Value(history.socialSecurity),
+      lifeInsurance: Value(history.lifeInsurance),
+      healthInsurance: Value(history.healthInsurance),
+      doubleDonation: Value(history.doubleDonation),
+      normalDonation: Value(history.normalDonation),
       tax: Value(history.tax),
     );
 
@@ -39,6 +43,10 @@ class TaxRepositoryImpl implements TaxRepository {
                   personalDeduction: row.personalDeduction,
                   providentFund: row.providentFund,
                   socialSecurity: row.socialSecurity,
+                  lifeInsurance: row.lifeInsurance,
+                  healthInsurance: row.healthInsurance,
+                  doubleDonation: row.doubleDonation,
+                  normalDonation: row.normalDonation,
                   tax: row.tax,
                 ),
               )

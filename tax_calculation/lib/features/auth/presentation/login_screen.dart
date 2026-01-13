@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:tax_calculation/core/auth/auth_errors.dart';
+import 'package:tax_calculation/core/auth/auth_error_mapper.dart';
+import 'package:tax_calculation/core/auth/auth_provider.dart';
 import 'package:tax_calculation/features/auth/presentation/register_screen.dart';
-import 'package:tax_calculation/features/auth/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -13,10 +15,11 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _passwordCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
   String? _error;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -25,27 +28,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  void _clearServerError() {
+    if (_error != null) {
+      setState(() => _error = null);
+    }
+  }
+
   Future<void> _login() async {
-    _error = null;
     if (!_formKey.currentState!.validate()) return;
 
-    final email = _emailCtrl.text.trim();
-    final password = _passwordCtrl.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _error = 'กรุณากรอกอีเมล และรหัสผ่าน';
-      });
-      return;
-    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     try {
-      await ref.read(authServiceProvider).signIn(email, password);
-      ref.read(authStateProvider.notifier).state = true;
-    } catch (e) {
+      final user = await ref.read(authServiceProvider).signIn(
+            _emailCtrl.text.trim(),
+            _passwordCtrl.text,
+          );
+
+      ref.read(authUserProvider.notifier).state = user;
+    } on AuthError catch (e) {
       setState(() {
-        _error = 'อีเมล และ/หรือรหัสผ่านไม่ถูกต้อง';
+        _error = AuthErrorMapper.message(e);
       });
+    } catch (_) {
+      setState(() {
+        _error = AuthErrorMapper.message(UnknownAuthError());
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -80,33 +95,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
+                  onChanged: (_) => _clearServerError(),
                   decoration: const InputDecoration(
                     labelText: 'อีเมล',
                     prefixIcon: Icon(Icons.email),
                   ),
-                  validator: (value) => emailValidator(value),
+                  validator: emailValidator,
                 ),
 
                 const SizedBox(height: 16),
 
                 // Password
                 TextFormField(
-                    controller: _passwordCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'รหัสผ่าน',
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกรหัสผ่าน';
-                      }
-                      return null;
-                    }),
+                  controller: _passwordCtrl,
+                  obscureText: true,
+                  onChanged: (_) => _clearServerError(),
+                  decoration: const InputDecoration(
+                    labelText: 'รหัสผ่าน',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'กรุณากรอกรหัสผ่าน';
+                    }
+                    return null;
+                  },
+                ),
 
                 const SizedBox(height: 16),
 
-                // Error message
+                // Server Error
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -123,14 +141,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Login button
                 ElevatedButton(
-                  onPressed: _login,
+                  onPressed: _loading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text(
-                    'เข้าสู่ระบบ',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'เข้าสู่ระบบ',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
 
                 const SizedBox(height: 16),
@@ -145,9 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     );
                   },
-                  child: const Text(
-                    'ยังไม่มีบัญชี? สมัครสมาชิก',
-                  ),
+                  child: const Text('ยังไม่มีบัญชี? สมัครสมาชิก'),
                 ),
               ],
             ),
@@ -159,10 +181,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 }
 
 String? emailValidator(String? value) {
-  // Regex for email
   final emailRegex = RegExp(
     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
   );
+
   if (value == null || value.isEmpty) {
     return 'กรุณากรอกอีเมล';
   } else if (!emailRegex.hasMatch(value)) {

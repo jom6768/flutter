@@ -13,6 +13,10 @@ class TaxRecords extends Table {
   RealColumn get personalDeduction => real()();
   RealColumn get providentFund => real()();
   RealColumn get socialSecurity => real()();
+  RealColumn get lifeInsurance => real()();
+  RealColumn get healthInsurance => real()();
+  RealColumn get doubleDonation => real()();
+  RealColumn get normalDonation => real()();
   RealColumn get tax => real()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

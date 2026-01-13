@@ -57,6 +57,10 @@ class TaxHistoryScreen extends ConsumerWidget {
                     personalDeduction: history.personalDeduction,
                     providentFund: history.providentFund,
                     socialSecurity: history.socialSecurity,
+                    lifeInsurance: history.lifeInsurance,
+                    healthInsurance: history.healthInsurance,
+                    doubleDonation: history.doubleDonation,
+                    normalDonation: history.normalDonation,
                   );
 
                   Navigator.push(
@@ -93,7 +97,11 @@ class TaxHistoryScreen extends ConsumerWidget {
                                 history.personalExpense +
                                     history.personalDeduction +
                                     history.providentFund +
-                                    history.socialSecurity,
+                                    history.socialSecurity +
+                                    history.lifeInsurance +
+                                    history.healthInsurance +
+                                    history.doubleDonation +
+                                    history.normalDonation,
                               ),
                               const Divider(height: 24),
                               _row(

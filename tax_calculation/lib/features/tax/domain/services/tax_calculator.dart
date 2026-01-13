@@ -30,8 +30,18 @@ class TaxCalculator {
     required double personalDeduction,
     required double providentFund,
     required double socialSecurity,
+    required double lifeInsurance,
+    required double healthInsurance,
+    required double doubleDonation,
+    required double normalDonation,
   }) {
-    final deduction = personalDeduction + providentFund + socialSecurity;
+    final deduction = personalDeduction +
+        providentFund +
+        socialSecurity +
+        lifeInsurance +
+        healthInsurance +
+        (2 * doubleDonation) +
+        normalDonation;
 
     final netIncome =
         (annualIncome - personalExpense - deduction).clamp(0, double.infinity);

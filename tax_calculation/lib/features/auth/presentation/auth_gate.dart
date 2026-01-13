@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tax_calculation/features/auth/presentation/login_screen.dart';
-import 'package:tax_calculation/features/auth/providers/auth_provider.dart';
+import 'package:tax_calculation/core/auth/auth_provider.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_form_screen.dart';
 
 class AuthGate extends ConsumerWidget {
@@ -10,8 +10,8 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loggedIn = ref.watch(authStateProvider);
+    final user = ref.watch(authUserProvider);
 
-    return loggedIn ? const TaxFormScreen() : const LoginScreen();
+    return user == null ? const LoginScreen() : const TaxFormScreen();
   }
 }
