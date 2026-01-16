@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import 'package:tax_calculation/features/tax/domain/models/tax_history.dart';
-import 'package:tax_calculation/features/tax/domain/services/tax_calculator.dart';
-import 'package:tax_calculation/features/tax/presentation/providers/tax_history_provider.dart';
+import 'package:tax_calculation/features/tax/application/tax_calculator.dart';
+import 'package:tax_calculation/features/tax/application/tax_provider.dart';
+import 'package:tax_calculation/features/tax/domain/tax_models.dart';
+import 'package:tax_calculation/features/tax/presentation/screens/tax_form_screen.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_result_screen.dart';
 
 class TaxHistoryScreen extends ConsumerWidget {
@@ -19,6 +20,21 @@ class TaxHistoryScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ประวัติการคำนวณภาษี'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'กรอกใหม่',
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TaxFormScreen(),
+                ),
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: historyAsync.when(
         loading: () => const Center(
@@ -50,8 +66,8 @@ class TaxHistoryScreen extends ConsumerWidget {
               return InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // 🔥 คำนวณ breakdown ใหม่จาก history
-                  final result = TaxCalculator.calculateWithBreakdown(
+                  // Calculate breakdown from history again.
+                  final result = TaxCalculator.calculate(
                     annualIncome: history.annualIncome,
                     personalExpense: history.personalExpense,
                     personalDeduction: history.personalDeduction,
@@ -105,7 +121,7 @@ class TaxHistoryScreen extends ConsumerWidget {
                               ),
                               const Divider(height: 24),
                               _row(
-                                'ภาษีที่ต้องจ่าย',
+                                'ภาษีที่ต้องชำระ',
                                 history.tax,
                                 isHighlight: true,
                               ),

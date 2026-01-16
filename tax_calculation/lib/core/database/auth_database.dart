@@ -16,9 +16,7 @@ class Users extends Table {
 
 @DriftDatabase(tables: [Users])
 class AuthDatabase extends _$AuthDatabase {
-  AuthDatabase() : super(_openConnection()) {
-    _init();
-  }
+  AuthDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
@@ -41,7 +39,7 @@ class AuthDatabase extends _$AuthDatabase {
 
   // ---------- init & seed ----------
 
-  Future<void> _init() async {
+  Future<void> init() async {
     if (kDebugMode) {
       await _seedDebugUserIfNeeded();
     }

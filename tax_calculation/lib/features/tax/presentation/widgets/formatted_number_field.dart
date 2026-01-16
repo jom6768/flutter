@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:tax_calculation/features/tax/presentation/formatters/decimal_input_formatter.dart';
-import 'package:tax_calculation/features/tax/presentation/utils/number_format_utils.dart';
+import 'package:tax_calculation/features/tax/utils/decimal_input_formatter.dart';
+import 'package:tax_calculation/features/tax/utils/number_format_utils.dart';
 
 /// TextFormField for number
 /// - tap: delete comma + select all (iOS/Android)

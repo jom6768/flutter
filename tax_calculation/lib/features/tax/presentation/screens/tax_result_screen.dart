@@ -1,24 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import 'package:tax_calculation/features/tax/domain/models/tax_breakdown.dart';
-import 'package:tax_calculation/features/tax/domain/models/tax_history.dart';
-import 'package:tax_calculation/features/tax/domain/services/tax_calculator.dart';
+import 'package:tax_calculation/features/tax/application/tax_provider.dart';
+import 'package:tax_calculation/features/tax/domain/tax_models.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_form_screen.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_history_screen.dart';
 
-class TaxResultScreen extends StatelessWidget {
+class TaxResultScreen extends ConsumerStatefulWidget {
   final TaxHistory history;
   final TaxCalculationResult result;
 
-  TaxResultScreen({
+  const TaxResultScreen({
     super.key,
     required this.history,
     required this.result,
   });
 
+  @override
+  ConsumerState<TaxResultScreen> createState() => _TaxResultScreenState();
+}
+
+class _TaxResultScreenState extends ConsumerState<TaxResultScreen> {
+  late TaxHistory history;
+  late TaxCalculationResult result;
+
   final NumberFormat _formatter = NumberFormat('#,##0.00');
   final NumberFormat _intFormatter = NumberFormat('#,##0');
+
+  @override
+  void initState() {
+    super.initState();
+    history = widget.history;
+    result = widget.result;
+  }
+
+  Future<void> _edit() async {
+    final updated = await Navigator.push<TaxHistory>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TaxFormScreen(
+          initialHistory: history,
+        ),
+      ),
+    );
+
+    if (updated == null) return;
+
+    await ref.read(taxRepositoryProvider).update(updated);
+
+    setState(() {
+      history = updated;
+      result = TaxCalculationResult(
+        netIncome: updated.annualIncome -
+            updated.personalExpense -
+            updated.personalDeduction,
+        tax: updated.tax,
+        breakdown: result.breakdown,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +68,33 @@ class TaxResultScreen extends StatelessWidget {
         title: const Text('ผลการคำนวณภาษี'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'กรอกใหม่',
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TaxFormScreen(),
+                ),
+                (route) => false,
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'แก้ไข',
+            onPressed: _edit,
+          ),
+          IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'ดูประวัติ',
             onPressed: () {
-              Navigator.push(
+              Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const TaxHistoryScreen(),
                 ),
+                (route) => false,
               );
             },
           ),
@@ -49,10 +109,6 @@ class TaxResultScreen extends StatelessWidget {
             _incomeSection(),
             const SizedBox(height: 16),
             _deductionSection(),
-            const SizedBox(height: 16),
-            _calculationSection(),
-            const SizedBox(height: 32),
-            _actionButtons(context),
           ],
         ),
       ),
@@ -60,7 +116,6 @@ class TaxResultScreen extends StatelessWidget {
   }
 
   // ================= SUMMARY =================
-
   Widget _summaryCard(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -99,7 +154,6 @@ class TaxResultScreen extends StatelessWidget {
   }
 
   // ================= TAX BREAKDOWN DIALOG =================
-
   void _showTaxBreakdownDialog(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.height < 700;
@@ -129,7 +183,6 @@ class TaxResultScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -143,17 +196,12 @@ class TaxResultScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const Divider(),
                   const SizedBox(height: 16),
-
                   // ================= TABLE =================
-
                   Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 600,
-                      ),
+                      constraints: const BoxConstraints(maxWidth: 600),
                       child: Scrollbar(
                         thumbVisibility: true,
                         child: SingleChildScrollView(
@@ -189,17 +237,13 @@ class TaxResultScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
                   const Divider(),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'ผลรวม',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      const Text('ผลรวม',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                       Text(
                         '${_formatter.format(result.tax)} บาท',
                         style: const TextStyle(
@@ -209,10 +253,8 @@ class TaxResultScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const Divider(),
                   const SizedBox(height: 16),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -230,7 +272,7 @@ class TaxResultScreen extends StatelessWidget {
   }
 
   List<DataRow> _buildTaxTableRows(BuildContext context) {
-    return result.breakdown.map((TaxBreakdownRow row) {
+    return result.breakdown.map((row) {
       return DataRow(
         cells: [
           _cell(
@@ -241,10 +283,8 @@ class TaxResultScreen extends StatelessWidget {
             ),
             align: Alignment.center,
           ),
-          _cell(
-            Text('${(row.rate * 100).toInt()}%'),
-            align: Alignment.centerRight,
-          ),
+          _cell(Text('${(row.rate * 100).toInt()}%'),
+              align: Alignment.centerRight),
           _cell(
             Text(row.taxable == 0 ? '-' : _intFormatter.format(row.taxable)),
             align: Alignment.centerRight,
@@ -259,12 +299,12 @@ class TaxResultScreen extends StatelessWidget {
   }
 
   // ================= SECTIONS =================
-
   Widget _incomeSection() {
     return _section(
       title: 'เงินได้',
       children: [
         _row('เงินได้ทั้งปี', history.annualIncome),
+        _row('เงินได้สุทธิ', result.netIncome, isHighlight: true),
       ],
     );
   }
@@ -285,41 +325,18 @@ class TaxResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _calculationSection() {
-    return _section(
-      title: 'คำนวณภาษี',
-      children: [
-        _row('เงินได้สุทธิ', result.netIncome),
-        const Divider(),
-        _row('ภาษีที่ต้องชำระ', result.tax, isHighlight: true),
-      ],
-    );
-  }
-
-  // ================= REUSABLE =================
-
-  Widget _section({
-    required String title,
-    required List<Widget> children,
-  }) {
+  Widget _section({required String title, required List<Widget> children}) {
     return Card(
       elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...children,
+        ]),
       ),
     );
   }
@@ -330,12 +347,18 @@ class TaxResultScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
+              color: isHighlight ? Colors.blue : null,
+            ),
+          ),
           Text(
             '${_formatter.format(value)} บาท',
             style: TextStyle(
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-              color: isHighlight ? Colors.red : null,
+              color: isHighlight ? Colors.blue : null,
             ),
           ),
         ],
@@ -343,35 +366,7 @@ class TaxResultScreen extends StatelessWidget {
     );
   }
 
-  DataCell _cell(
-    Widget child, {
-    Alignment align = Alignment.centerLeft,
-  }) {
-    return DataCell(
-      Align(
-        alignment: align,
-        child: child,
-      ),
-    );
-  }
-
-  // ================= ACTIONS =================
-
-  Widget _actionButtons(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const TaxFormScreen(),
-            ),
-            (route) => false,
-          );
-        },
-        child: const Text('กรอกแบบฟอร์มใหม่'),
-      ),
-    );
+  DataCell _cell(Widget child, {Alignment align = Alignment.centerLeft}) {
+    return DataCell(Align(alignment: align, child: child));
   }
 }

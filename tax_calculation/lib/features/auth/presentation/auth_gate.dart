@@ -10,8 +10,19 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authUserProvider);
+    final dbAsync = ref.watch(authDatabaseProvider);
 
-    return user == null ? const LoginScreen() : const TaxFormScreen();
+    return dbAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: Center(child: Text(e.toString())),
+      ),
+      data: (_) {
+        final user = ref.watch(authUserProvider);
+        return user == null ? const LoginScreen() : const TaxFormScreen();
+      },
+    );
   }
 }

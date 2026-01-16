@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:tax_calculation/features/tax/domain/models/tax_history.dart';
-import 'package:tax_calculation/features/tax/presentation/providers/tax_calculate_provider.dart';
-import 'package:tax_calculation/features/tax/presentation/providers/tax_loading_provider.dart';
+import 'package:tax_calculation/features/tax/application/tax_provider.dart';
+import 'package:tax_calculation/features/tax/domain/tax_models.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_result_screen.dart';
 import 'package:tax_calculation/features/tax/presentation/screens/tax_history_screen.dart';
-import 'package:tax_calculation/features/tax/presentation/validators/form_validators.dart';
 import 'package:tax_calculation/features/tax/presentation/widgets/formatted_number_field.dart';
-import 'package:tax_calculation/features/tax/presentation/utils/number_format_utils.dart';
+import 'package:tax_calculation/features/tax/utils/form_validators.dart';
+import 'package:tax_calculation/features/tax/utils/number_format_utils.dart';
 
 class TaxFormScreen extends ConsumerStatefulWidget {
-  const TaxFormScreen({super.key});
+  final TaxHistory? initialHistory;
+
+  const TaxFormScreen({
+    super.key,
+    this.initialHistory,
+  });
 
   @override
   ConsumerState<TaxFormScreen> createState() => _TaxFormScreenState();
@@ -21,20 +25,13 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final _annualIncomeController =
-      TextEditingController(text: formatForDisplay(0));
-  final _providentFundController =
-      TextEditingController(text: formatForDisplay(0));
-  final _socialSecurityController =
-      TextEditingController(text: formatForDisplay(0));
-  final _lifeInsuranceController =
-      TextEditingController(text: formatForDisplay(0));
-  final _healthInsuranceController =
-      TextEditingController(text: formatForDisplay(0));
-  final _doubleDonationController =
-      TextEditingController(text: formatForDisplay(0));
-  final _normalDonationController =
-      TextEditingController(text: formatForDisplay(0));
+  late final TextEditingController _annualIncomeController;
+  late final TextEditingController _providentFundController;
+  late final TextEditingController _socialSecurityController;
+  late final TextEditingController _lifeInsuranceController;
+  late final TextEditingController _healthInsuranceController;
+  late final TextEditingController _doubleDonationController;
+  late final TextEditingController _normalDonationController;
 
   // FocusNodes
   final _annualFocus = FocusNode();
@@ -44,6 +41,28 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
   final _healthInsuranceFocus = FocusNode();
   final _doubleDonationFocus = FocusNode();
   final _normalDonationFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+
+    final h = widget.initialHistory;
+
+    _annualIncomeController =
+        TextEditingController(text: formatForDisplay(h?.annualIncome ?? 0));
+    _providentFundController =
+        TextEditingController(text: formatForDisplay(h?.providentFund ?? 0));
+    _socialSecurityController =
+        TextEditingController(text: formatForDisplay(h?.socialSecurity ?? 0));
+    _lifeInsuranceController =
+        TextEditingController(text: formatForDisplay(h?.lifeInsurance ?? 0));
+    _healthInsuranceController =
+        TextEditingController(text: formatForDisplay(h?.healthInsurance ?? 0));
+    _doubleDonationController =
+        TextEditingController(text: formatForDisplay(h?.doubleDonation ?? 0));
+    _normalDonationController =
+        TextEditingController(text: formatForDisplay(h?.normalDonation ?? 0));
+  }
 
   @override
   void dispose() {
@@ -84,6 +103,7 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
     final result = await ref.read(taxCalculateProvider(input).future);
 
     final history = TaxHistory(
+      id: widget.initialHistory?.id,
       annualIncome: input.annualIncome,
       personalExpense: (input.annualIncome * 0.5).clamp(0, 100000),
       personalDeduction: 60000,
@@ -100,11 +120,24 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
+    // ===== EDIT MODE =====
+    if (widget.initialHistory != null) {
+      Navigator.pop(context, history);
+      return;
+    }
+
+    // ===== CREATE MODE =====
+    final id = await ref.read(taxRepositoryProvider).insert(history);
+
+    if (!mounted) return;
+
+    final savedHistory = history.copyWith(id: id);
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => TaxResultScreen(
-          history: history,
+          history: savedHistory,
           result: result,
         ),
       ),
@@ -121,12 +154,14 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
+            tooltip: 'ดูประวัติ',
             onPressed: () {
-              Navigator.push(
+              Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const TaxHistoryScreen(),
                 ),
+                (route) => false,
               );
             },
           ),
@@ -204,7 +239,7 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('คำนวณภาษี'),
+                      : const Text('บันทึก และคำนวณภาษี'),
                 ),
               ),
             ],
