@@ -12,10 +12,14 @@ class FormattedNumberField extends StatefulWidget {
   final String label;
   final TextEditingController controller;
   final String? Function(String?)? validator;
+  final String? infoTooltip;
   final int decimalRange;
   final bool enabled;
   final TextInputAction textInputAction;
+  final FocusNode? focusNode;
   final FocusNode? nextFocusNode;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const FormattedNumberField({
     super.key,
@@ -25,7 +29,11 @@ class FormattedNumberField extends StatefulWidget {
     this.decimalRange = 2,
     this.enabled = true,
     this.textInputAction = TextInputAction.next,
+    this.focusNode,
     this.nextFocusNode,
+    this.infoTooltip,
+    this.onChanged,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -33,21 +41,26 @@ class FormattedNumberField extends StatefulWidget {
 }
 
 class _FormattedNumberFieldState extends State<FormattedNumberField> {
-  late final FocusNode _focusNode;
+  FocusNode? _internalFocusNode;
   bool _editing = false;
+  bool _hoveringInfo = false;
+
+  FocusNode get _focusNode =>
+      widget.focusNode ?? (_internalFocusNode ??= FocusNode());
+
+  bool get _ownsFocusNode => widget.focusNode == null;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
 
     _focusNode.addListener(() {
-      // 👉 Focus in (Tab / Next / programmatic)
+      // Focus in (Tab / Next / programmatic)
       if (_focusNode.hasFocus && !_editing) {
         _enterEditMode();
       }
 
-      // 👉 Focus out (blur)
+      // Focus out (blur)
       if (!_focusNode.hasFocus && _editing) {
         _exitEditMode();
       }
@@ -56,7 +69,9 @@ class _FormattedNumberFieldState extends State<FormattedNumberField> {
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    if (_ownsFocusNode) {
+      _internalFocusNode?.dispose();
+    }
     super.dispose();
   }
 
@@ -87,7 +102,7 @@ class _FormattedNumberFieldState extends State<FormattedNumberField> {
     controller.text = formatForDisplay(value);
   }
 
-  void _handleSubmitted() {
+  void _handleSubmitted(String _) {
     _exitEditMode();
 
     if (widget.nextFocusNode != null) {
@@ -95,6 +110,57 @@ class _FormattedNumberFieldState extends State<FormattedNumberField> {
     } else {
       _focusNode.unfocus();
     }
+  }
+
+  Widget? _buildInfoIcon(BuildContext context) {
+    if (widget.infoTooltip == null) return null;
+
+    final theme = Theme.of(context);
+
+    return Tooltip(
+      message: widget.infoTooltip!,
+      waitDuration: const Duration(milliseconds: 300),
+      showDuration: const Duration(seconds: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      preferBelow: false,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        height: 1.4,
+      ),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.help,
+        onEnter: (_) => setState(() => _hoveringInfo = true),
+        onExit: (_) => setState(() => _hoveringInfo = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: _hoveringInfo
+                ? theme.colorScheme.primary.withOpacity(0.08)
+                : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.info_outline,
+            size: 18,
+            color: _hoveringInfo ? theme.colorScheme.primary : Colors.grey,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -112,14 +178,31 @@ class _FormattedNumberFieldState extends State<FormattedNumberField> {
       decoration: InputDecoration(
         labelText: widget.label,
         border: const OutlineInputBorder(),
+        prefixIcon: _buildInfoIcon(context),
       ),
       validator: widget.validator,
       textInputAction: widget.textInputAction,
+      onChanged: widget.onChanged,
 
-      // 👉 soft keyboard "Next / Done"
-      onFieldSubmitted: (_) => _handleSubmitted(),
+      // soft keyboard "Next / Done"
+      onFieldSubmitted: (value) {
+        _exitEditMode();
 
-      // 👉 for touch (iOS)
+        if (widget.onFieldSubmitted != null) {
+          // ให้ parent จัดการเอง (เช่น animate tab + focus)
+          widget.onFieldSubmitted!.call(value);
+          return;
+        }
+
+        // default behavior
+        if (widget.nextFocusNode != null) {
+          widget.nextFocusNode!.requestFocus();
+        } else {
+          _focusNode.unfocus();
+        }
+      },
+
+      // for touch (iOS)
       onTap: () {
         if (!_editing) {
           _enterEditMode();

@@ -21,8 +21,10 @@ class TaxFormScreen extends ConsumerStatefulWidget {
   ConsumerState<TaxFormScreen> createState() => _TaxFormScreenState();
 }
 
-class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
+class _TaxFormScreenState extends ConsumerState<TaxFormScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  late final TabController _tabController;
 
   // Controllers
   late final TextEditingController _annualIncomeController;
@@ -34,17 +36,22 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
   late final TextEditingController _normalDonationController;
 
   // FocusNodes
-  final _annualFocus = FocusNode();
-  final _providentFocus = FocusNode();
+  final _annualIncomeFocus = FocusNode();
+  final _providentFundFocus = FocusNode();
   final _socialSecurityFocus = FocusNode();
   final _lifeInsuranceFocus = FocusNode();
   final _healthInsuranceFocus = FocusNode();
   final _doubleDonationFocus = FocusNode();
   final _normalDonationFocus = FocusNode();
 
+  bool _incomeError = false;
+  bool _deductionError = false;
+  bool _donationError = false;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
 
     final h = widget.initialHistory;
 
@@ -66,6 +73,7 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _annualIncomeController.dispose();
     _providentFundController.dispose();
     _socialSecurityController.dispose();
@@ -73,20 +81,67 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
     _healthInsuranceController.dispose();
     _doubleDonationController.dispose();
     _normalDonationController.dispose();
-
-    _annualFocus.dispose();
-    _providentFocus.dispose();
+    _annualIncomeFocus.dispose();
+    _providentFundFocus.dispose();
     _socialSecurityFocus.dispose();
     _lifeInsuranceFocus.dispose();
     _healthInsuranceFocus.dispose();
     _doubleDonationFocus.dispose();
     _normalDonationFocus.dispose();
-
     super.dispose();
   }
 
+  bool get _hasIncome => parseNumber(_annualIncomeController.text) > 0;
+
+  void _animateToTab(int index, FocusNode focus) {
+    _tabController.animateTo(
+      index,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+
+    Future.microtask(() {
+      if (!mounted) return;
+      focus.requestFocus();
+    });
+  }
+
+  void _updateErrorState() {
+    setState(() {
+      _incomeError =
+          numberValidator(_annualIncomeController.text, required: true) != null;
+
+      _deductionError = [
+        _providentFundController,
+        _socialSecurityController,
+        _lifeInsuranceController,
+        _healthInsuranceController,
+      ].any((c) => numberValidator(c.text) != null);
+
+      _donationError = [
+        _doubleDonationController,
+        _normalDonationController,
+      ].any((c) => numberValidator(c.text) != null);
+    });
+  }
+
+  void _jumpToFirstErrorTab() {
+    if (_incomeError) {
+      _tabController.animateTo(0);
+    } else if (_deductionError) {
+      _tabController.animateTo(1);
+    } else if (_donationError) {
+      _tabController.animateTo(2);
+    }
+  }
+
   Future<void> _calculate() async {
-    if (!_formKey.currentState!.validate()) return;
+    _updateErrorState();
+
+    if (!_formKey.currentState!.validate()) {
+      _jumpToFirstErrorTab();
+      return;
+    }
 
     ref.read(taxLoadingProvider.notifier).state = true;
 
@@ -117,28 +172,54 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
     );
 
     ref.read(taxLoadingProvider.notifier).state = false;
-
     if (!mounted) return;
 
-    // ===== EDIT MODE =====
     if (widget.initialHistory != null) {
       Navigator.pop(context, history);
       return;
     }
 
-    // ===== CREATE MODE =====
     final id = await ref.read(taxRepositoryProvider).insert(history);
-
     if (!mounted) return;
-
-    final savedHistory = history.copyWith(id: id);
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => TaxResultScreen(
-          history: savedHistory,
+          history: history.copyWith(id: id),
           result: result,
+        ),
+      ),
+    );
+  }
+
+  Tab _tab(
+    String label,
+    IconData icon,
+    bool error, {
+    bool disabled = false,
+  }) {
+    final color = disabled ? Colors.grey : null;
+
+    return Tab(
+      child: Opacity(
+        opacity: disabled ? 0.5 : 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: color)),
+            if (disabled)
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+              ),
+            if (error)
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Icon(Icons.error, color: Colors.red, size: 16),
+              ),
+          ],
         ),
       ),
     );
@@ -151,6 +232,51 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('คำนวณภาษีเงินได้'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(_hasIncome ? 48 : 78),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TabBar(
+                controller: _tabController,
+                onTap: (i) {
+                  if (i > 0 && !_hasIncome) {
+                    _tabController.animateTo(0);
+                  }
+                },
+                tabs: [
+                  _tab('เงินได้', Icons.payments, _incomeError),
+                  _tab(
+                    'ค่าลดหย่อน',
+                    Icons.remove_circle,
+                    _deductionError,
+                    disabled: !_hasIncome,
+                  ),
+                  _tab(
+                    'บริจาค',
+                    Icons.volunteer_activism,
+                    _donationError,
+                    disabled: !_hasIncome,
+                  ),
+                ],
+              ),
+              if (!_hasIncome)
+                Container(
+                  width: double.infinity,
+                  color: Colors.amber.shade100,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: const Text(
+                    'กรุณากรอกเงินได้รวมทั้งปี เพื่อปลดล็อกแท็บค่าลดหย่อนและบริจาค',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -158,94 +284,137 @@ class _TaxFormScreenState extends ConsumerState<TaxFormScreen> {
             onPressed: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const TaxHistoryScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const TaxHistoryScreen()),
                 (route) => false,
               );
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.always,
-          child: Column(
-            children: [
-              FormattedNumberField(
-                label: 'เงินได้ทั้งปี (บาท)',
-                controller: _annualIncomeController,
-                validator: (v) => numberValidator(v, required: true),
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _providentFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'กองทุนสำรองเลี้ยงชีพ (บาท)',
-                controller: _providentFundController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _socialSecurityFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'ค่าประกันสังคม (บาท)',
-                controller: _socialSecurityController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _lifeInsuranceFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'เบี้ยประกันชีวิต (บาท)',
-                controller: _lifeInsuranceController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _healthInsuranceFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'เบี้ยประกันสุขภาพ (บาท)',
-                controller: _healthInsuranceController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _doubleDonationFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'บริจาคเพื่อการศึกษา/กีฬา/โรงพยาบาลรัฐ (บาท)',
-                controller: _doubleDonationController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.next,
-                nextFocusNode: _normalDonationFocus,
-              ),
-              const SizedBox(height: 12),
-              FormattedNumberField(
-                label: 'บริจาคอื่นๆ (บาท)',
-                controller: _normalDonationController,
-                validator: numberValidator,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : _calculate,
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('บันทึก และคำนวณภาษี'),
-                ),
-              ),
-            ],
+      body: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.always,
+        child: TabBarView(
+          controller: _tabController,
+          physics: _hasIncome
+              ? const AlwaysScrollableScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          children: [
+            _incomeTab(),
+            _deductionTab(),
+            _donationTab(isLoading),
+          ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ElevatedButton(
+            onPressed: (!_hasIncome || isLoading) ? null : _calculate,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('บันทึก และคำนวณภาษี'),
           ),
         ),
       ),
     );
   }
+
+  Widget _incomeTab() => _wrap([
+        FormattedNumberField(
+          label: 'เงินได้รวมทั้งปี (บาท)',
+          controller: _annualIncomeController,
+          focusNode: _annualIncomeFocus,
+          // validator: (v) => numberValidator(v, required: true),
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          infoTooltip: 'เงินได้รวมทั้งปี ก่อนหักค่าใช้จ่ายและค่าลดหย่อน',
+          onChanged: (_) => setState(() {}),
+          onFieldSubmitted: (_) {
+            if (_hasIncome) {
+              _animateToTab(1, _providentFundFocus);
+            }
+          },
+        ),
+      ]);
+
+  Widget _deductionTab() => _wrap([
+        FormattedNumberField(
+          label: 'กองทุนสำรองเลี้ยงชีพ (บาท)',
+          controller: _providentFundController,
+          focusNode: _providentFundFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          nextFocusNode: _socialSecurityFocus,
+          infoTooltip: 'ลดหย่อนได้สูงสุด 15% ของเงินได้ แต่ไม่เกิน 500,000 บาท',
+        ),
+        _gap,
+        FormattedNumberField(
+          label: 'ค่าประกันสังคม (บาท)',
+          controller: _socialSecurityController,
+          focusNode: _socialSecurityFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          nextFocusNode: _lifeInsuranceFocus,
+          infoTooltip: 'ลดหย่อนได้ไม่เกิน 9,000 บาท',
+        ),
+        _gap,
+        FormattedNumberField(
+          label: 'เบี้ยประกันชีวิต (บาท)',
+          controller: _lifeInsuranceController,
+          focusNode: _lifeInsuranceFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          nextFocusNode: _healthInsuranceFocus,
+          infoTooltip: 'ลดหย่อนได้ไม่เกิน 100,000 บาท',
+        ),
+        _gap,
+        FormattedNumberField(
+          label: 'เบี้ยประกันสุขภาพ (บาท)',
+          controller: _healthInsuranceController,
+          focusNode: _healthInsuranceFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          infoTooltip:
+              'ลดหย่อนได้ไม่เกิน 25,000 บาท และเมื่อรวมกับเบี้ยประกันชีวิตแล้วจะต้องไม่เกิน 100,000 บาท',
+          onFieldSubmitted: (_) {
+            _animateToTab(2, _doubleDonationFocus);
+          },
+        ),
+      ]);
+
+  Widget _donationTab(bool isLoading) => _wrap([
+        FormattedNumberField(
+          label: 'บริจาคเพื่อการศึกษา/กีฬา/โรงพยาบาลรัฐ (บาท)',
+          controller: _doubleDonationController,
+          focusNode: _doubleDonationFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.next,
+          nextFocusNode: _normalDonationFocus,
+          infoTooltip: 'ลดหย่อนได้ 2 เท่า แต่ไม่เกิน 10% ของเงินได้สุทธิ',
+        ),
+        _gap,
+        FormattedNumberField(
+          label: 'บริจาคอื่นๆ (บาท)',
+          controller: _normalDonationController,
+          focusNode: _normalDonationFocus,
+          validator: numberValidator,
+          textInputAction: TextInputAction.done,
+          infoTooltip: 'ลดหย่อนได้ไม่เกิน 10% ของเงินได้สุทธิ',
+        ),
+      ]);
+
+  Widget _wrap(List<Widget> children) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: children),
+      );
+
+  static const _gap = SizedBox(height: 12);
 }
